@@ -37,6 +37,7 @@ function App() {
   const [toast, setToast] = useState('')
   const [micOn, setMicOn] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
+  const [showAuth, setShowAuth] = useState(true)
 
   const notify = (message: string) => { setToast(message); window.setTimeout(() => setToast(''), 2200) }
   const go = (next: Screen) => { setScreen(next); setShowProfile(false) }
@@ -58,6 +59,7 @@ function App() {
     </header>}
 
     {showProfile && <ProfilePopover avatar={selectedAvatar} nickname={nickname} onClose={() => setShowProfile(false)} onProfile={() => go('profile')} />}
+    {showAuth && <AuthModal nickname={nickname} setNickname={setNickname} selectedAvatar={selectedAvatar} setSelectedAvatar={setSelectedAvatar} onStart={() => setShowAuth(false)} />}
 
     <main className="page-wrap">
       {screen === 'home' && <HomeScreen go={go} selectedAvatar={selectedAvatar} nickname={nickname} notify={notify} />}
@@ -134,6 +136,10 @@ function ShopScreen({ go, coins, setCoins, notify }: { go: (s: Screen) => void; 
   const [category, setCategory] = useState('Бүгд'); const items = useMemo(() => [{ icon: '👑', title: 'Royal Crown', type: 'Avatar frame', price: 500 }, { icon: '💬', title: 'Sus!', type: 'Voice sticker', price: 200 }, { icon: '🎁', title: 'Mystery Chest', type: 'Virtual gift', price: 800 }, { icon: '💐', title: 'Bouquet', type: 'Virtual gift', price: 350 }, { icon: '🚀', title: 'Rocket Boost', type: 'Virtual gift', price: 650 }, { icon: '✨', title: 'Golden Frame', type: 'Avatar frame', price: 1200 }].filter(x => category === 'Бүгд' || x.type === category), [category]);
   const buy = (price: number, title: string) => { if (coins >= price) { setCoins(coins - price); notify(`${title} таны inventory-д нэмэгдлээ`) } else notify('Coin хүрэлцэхгүй байна') }
   return <section className="shop-screen"><div className="shop-heading"><div><button className="back-button" onClick={() => go('home')}><ArrowLeft size={17} /> Буцах</button><span className="eyebrow"><ShoppingBag size={13} /> THE MARKETPLACE</span><h1>Өөрийн <span className="gold">style</span>-аа нэм</h1></div><div className="shop-balance"><Coins size={19} /><div><small>ТАНЫ BALANCE</small><b>{coins.toLocaleString()} COINS</b></div></div></div><div className="shop-tabs">{['Бүгд', 'Avatar frame', 'Voice sticker', 'Virtual gift'].map(c => <button className={category === c ? 'active' : ''} onClick={() => setCategory(c)} key={c}>{c}</button>)}</div><div className="shop-grid">{items.map(item => <article className="shop-item" key={item.title}><div className="item-art">{item.icon}<span className="sparkle">✦</span></div><small>{item.type}</small><h3>{item.title}</h3><button className="buy-button" onClick={() => buy(item.price, item.title)}><Coins size={14} /> {item.price} <span>BUY</span></button></article>)}</div></section>
+}
+
+function AuthModal({ nickname, setNickname, selectedAvatar, setSelectedAvatar, onStart }: { nickname: string; setNickname: (v: string) => void; selectedAvatar: Avatar; setSelectedAvatar: (v: Avatar) => void; onStart: () => void }) {
+  return <div className="auth-overlay"><div className="auth-modal"><button className="auth-close" onClick={onStart}><X size={16} /></button><div className="auth-logo"><span className="brand-mark"><Mic2 size={20} /></span><span>VOICE<span className="gold">GAME</span></span></div><span className="eyebrow"><Sparkles size={13} /> WELCOME TO THE PARTY</span><h2>Тоглоомын дүрээ<br /><span className="gold">бүтээцгээе</span></h2><p>Найзуудтайгаа тоглохын өмнө өөрийн nickname болон avatar-аа сонгоно уу.</p><label>Хоч оруулах</label><input autoFocus value={nickname} onChange={e => setNickname(e.target.value)} placeholder="Жишээ: Anaraa" /><label>Avatar сонгох</label><div className="auth-avatar-grid">{avatars.map((a, i) => <button key={a.name} className={selectedAvatar.name === a.name ? 'selected' : ''} onClick={() => setSelectedAvatar(a)}><AvatarBubble avatar={a} size="lg" /><span className="auth-accessory">{i % 2 === 0 ? '♛' : '🎩'}</span><small>{a.name}</small></button>)}</div><button className="auth-start" onClick={onStart}><Play size={16} fill="currentColor" /> Тоглож эхлэх</button></div></div>
 }
 
 function ProfilePopover({ avatar, nickname, onClose, onProfile }: { avatar: Avatar; nickname: string; onClose: () => void; onProfile: () => void }) { return <div className="profile-popover"><button className="close-pop" onClick={onClose}><X size={15} /></button><AvatarBubble avatar={avatar} size="lg" crown /><div><b>{nickname}</b><small>Level 38 · 68% Win rate</small></div><button className="text-button" onClick={onProfile}>Профайл харах <ChevronRight size={14} /></button></div> }
