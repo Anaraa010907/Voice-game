@@ -1,9 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useReducer, useState } from 'react'
 import {
   ArrowLeft, Bell, Check, ChevronRight, CircleHelp, Coins, Crown, Gamepad2,
   Gift, Home, Mic, Mic2, MoreHorizontal, Package, Play, Plus, Settings,
   ShoppingBag, Sparkles, Trophy, Users, Volume2, X, Zap,
 } from 'lucide-react'
+import { createInitialGame, gameReducer } from './game/gameEngine'
+import type { BoardTile, GameAction, GamePlayer, GameState } from './game/gameTypes'
 
 type Screen = 'home' | 'voice' | 'board' | 'profile' | 'shop'
 type Avatar = { emoji: string; name: string; color: string }
@@ -38,6 +40,13 @@ function App() {
   const [micOn, setMicOn] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
   const [showAuth, setShowAuth] = useState(true)
+  const [game, dispatch] = useReducer(gameReducer, undefined, createInitialGame)
+  useEffect(() => {
+    if (screen === 'board' && game.dice.isRolling && game.turn.pendingMoves > 0) {
+      const timer = window.setTimeout(() => dispatch({ type: 'STEP_MOVE' }), 260)
+      return () => window.clearTimeout(timer)
+    }
+  }, [screen, game.dice.isRolling, game.turn.pendingMoves])
 
   const notify = (message: string) => { setToast(message); window.setTimeout(() => setToast(''), 2200) }
   const go = (next: Screen) => { setScreen(next); setShowProfile(false) }
@@ -64,7 +73,7 @@ function App() {
     <main className="page-wrap">
       {screen === 'home' && <HomeScreen go={go} selectedAvatar={selectedAvatar} nickname={nickname} notify={notify} />}
       {screen === 'voice' && <VoiceRoom go={go} micOn={micOn} setMicOn={setMicOn} notify={notify} />}
-      {screen === 'board' && <BoardRoom go={go} />}
+      {screen === 'board' && <BoardRoom go={go} game={game} dispatch={dispatch} />}
       {screen === 'profile' && <ProfileScreen go={go} avatar={selectedAvatar} nickname={nickname} setNickname={setNickname} selectedAvatar={selectedAvatar} setSelectedAvatar={setSelectedAvatar} />}
       {screen === 'shop' && <ShopScreen go={go} coins={coins} setCoins={setCoins} notify={notify} />}
     </main>
@@ -76,6 +85,7 @@ function App() {
       <NavItem icon={<Settings size={18} />} label="Тохиргоо" onClick={() => notify('Тохиргоо удахгүй')} />
     </nav>
     {toast && <div className="toast"><Check size={16} /> {toast}</div>}
+    {game.modal && <GameModal modal={game.modal} dispatch={dispatch} />}
   </div>
 }
 
@@ -169,20 +179,26 @@ const boardPlayers = [
   { name: 'Troga', money: '1500 MNT', coins: 5, emoji: '🐼', color: '#566b89' },
 ]
 
-function BoardRoom({ go }: { go: (s: Screen) => void }) {
-  const [rolled, setRolled] = useState(false)
-  return <section className="mongol-board-screen"><header className="board-game-header"><button className="exit-pill" onClick={() => go('home')}><ArrowLeft size={18} /> Гарах</button><div className="board-room-code"><small>ӨРӨӨНИЙ КОД</small><strong>254 852</strong></div><button className="waiting-pill" onClick={() => {}}>Хүлээлгийн өрөө</button></header><div className="board-game-layout"><aside className="board-player-panel"><div className="panel-kicker"><Users size={14} /> ТОГЛОГЧИД <span>4 / 6</span></div>{boardPlayers.map(p => <PlayerCard key={p.name} player={p} />)}<button className="add-player" onClick={() => {}}><Plus size={16} /> Найз урих</button></aside><GameBoard tiles={mongolianTiles} rolled={rolled} /><aside className="game-action-panel"><DicePair rolled={rolled} /><div className="turn-label"><span className="live-dot" /> BOLD-ЫН ЭЭЛЖ</div><button className="game-action gold-action" onClick={() => setRolled(true)}><span>🎲</span> ШОО ОРУУЛАХ</button><button className="game-action" onClick={() => {}}><span>🪙</span> ХУДАЛДАЖ АВАХ</button><button className="game-action" onClick={() => {}}><span>🏠</span> БАЙШИН БАРИХ</button><GameChat /></aside></div></section>
+function BoardRoom({ go, game, dispatch }: { go: (s: Screen) => void; game: GameState; dispatch: React.Dispatch<GameAction> }) {
+  const current = game.players[game.currentPlayerIndex]
+  const activePlayer = current.name
+  const canRoll = game.gameStatus === 'playing' && !game.turn.hasRolled && !game.dice.isRolling && !current.isInJail
+  const canBuy = game.turn.canBuy && game.board[current.position].ownerId === null && current.money >= game.board[current.position].price
+  const canBuild = game.turn.canBuild && game.board[current.position].ownerId === current.id && current.money >= 100
+  return <section className="mongol-board-screen"><header className="board-game-header"><button className="exit-pill" onClick={() => go('home')}><ArrowLeft size={18} /> Гарах</button><div className="board-room-code"><small>ӨРӨӨНИЙ КОД</small><strong>254 852</strong></div><button className="waiting-pill" onClick={() => {}}>Хүлээлгийн өрөө</button></header><div className="board-game-layout"><aside className="board-player-panel"><div className="panel-kicker"><Users size={14} /> ТОГЛОГЧИД <span>{game.players.filter(p => !p.isBankrupt).length} / 6</span></div>{game.players.map(p => <PlayerCard key={p.id} player={p} current={p.id === current.id} />)}<button className="add-player" onClick={() => {}}><Plus size={16} /> Найз урих</button></aside><GameBoard tiles={game.board} game={game} /><aside className="game-action-panel"><DicePair rolled={game.dice.isRolling} dice1={game.dice.dice1} dice2={game.dice.dice2} /><div className="turn-label"><span className="live-dot" /> {activePlayer.toUpperCase()}-ЫН ЭЭЛЖ {game.turn.pendingMoves > 0 && `· ${game.turn.pendingMoves} НҮД`}</div>{current.isInJail && <button className="game-action gold-action" onClick={() => dispatch({ type: 'PAY_JAIL_FINE' })}><span>🔓</span> ШОРОНГООС ГАРАХ · 50 MNT</button>}<button className="game-action gold-action" disabled={!canRoll} onClick={() => dispatch({ type: 'ROLL_DICE' })}><span>🎲</span> ШОО ОРУУЛАХ</button><button className="game-action" disabled={!canBuy} onClick={() => dispatch({ type: 'BUY_PROPERTY' })}><span>🪙</span> ХУДАЛДАЖ АВАХ</button><button className="game-action" disabled={!canBuild} onClick={() => dispatch({ type: 'BUILD_HOUSE' })}><span>🏠</span> БАЙШИН БАРИХ</button>{game.turn.hasRolled && game.turn.pendingMoves === 0 && <button className="game-action continue-action" onClick={() => dispatch({ type: 'END_TURN' })}>{game.turn.doublesCount > 0 ? 'ДАХИН ШОО ШИДЭХ' : 'ЭЭЛЖ ДУУСГАХ'}</button>}<GameChat log={game.log} /></aside></div></section>
 }
 
-function PlayerCard({ player }: { player: typeof boardPlayers[number] }) { return <div className={`board-player-card ${player.active ? 'active-player' : ''}`}><AvatarBubble avatar={{ emoji: player.emoji, color: player.color }} size="md" /><div><b>{player.name}</b><small>{player.money}</small><span><Coins size={11} /> {player.coins} ӨМЧ</span></div><MoreHorizontal size={16} /></div> }
+function PlayerCard({ player, current }: { player: GamePlayer; current: boolean }) { return <div className={`board-player-card ${current ? 'active-player' : ''} ${player.isBankrupt ? 'bankrupt-player' : ''}`}><AvatarBubble avatar={{ emoji: player.avatar, color: player.color }} size="md" /><div><b>{player.name}</b><small>{player.isBankrupt ? 'ДАМПУУРСАН' : `${player.money} MNT`}</small><span><Coins size={11} /> {player.properties.length} ӨМЧ · Нүд {player.position}</span></div><MoreHorizontal size={16} /></div> }
 
-function GameBoard({ tiles, rolled }: { tiles: typeof mongolianTiles; rolled: boolean }) { return <div className="game-board-shell"><div className="game-board"><div className="board-center-area"><div className="map-mark">🇲🇳</div><strong>MONGOLIA</strong><small>THE GREAT STEPPE</small><div className="board-dice-row"><span className={rolled ? 'dice rolling' : 'dice'}>⚄</span><span className={rolled ? 'dice rolling delay' : 'dice'}>⚂</span></div><div className="gold-pawn">♟<i /></div></div>{tiles.map((tile, index) => <PropertyTile tile={tile} index={index} key={`${tile.name}-${index}`} />)}</div></div> }
+function GameBoard({ tiles, game }: { tiles: BoardTile[]; game: GameState }) { return <div className="game-board-shell"><div className="game-board"><div className="board-center-area"><div className="map-mark">🇲🇳</div><strong>MONGOLIA</strong><small>THE GREAT STEPPE</small><div className="board-dice-row"><span className="dice">{game.dice.dice1}</span><span className="dice">{game.dice.dice2}</span></div><div className="gold-pawn">♟<i /></div></div>{tiles.map((tile, index) => <PropertyTile tile={tile} index={index} players={game.players} key={`${tile.name}-${index}`} />)}</div></div> }
 
-function PropertyTile({ tile, index }: { tile: typeof mongolianTiles[number]; index: number }) { const side = index < 10 ? 'top' : index < 18 ? 'right' : index < 28 ? 'bottom' : 'left'; const order = index < 10 ? index + 1 : index < 18 ? index - 8 : index < 28 ? 38 - index : 38 - index; return <div className={`property-tile ${tile.type === 'special' ? 'special-tile' : `property-${tile.color}`} tile-${side}`} style={side === 'top' ? { gridColumn: order, gridRow: 1 } : side === 'right' ? { gridColumn: 10, gridRow: order } : side === 'bottom' ? { gridColumn: order, gridRow: 10 } : { gridColumn: 1, gridRow: order }}><b>{tile.name}</b><span>{tile.icon}</span><small>{tile.price}</small></div> }
+function PropertyTile({ tile, index, players }: { tile: BoardTile; index: number; players: GamePlayer[] }) { const side = index < 10 ? 'top' : index < 18 ? 'right' : index < 28 ? 'bottom' : 'left'; const order = index < 10 ? index + 1 : index < 18 ? index - 8 : index < 28 ? 38 - index : 38 - index; const owner = tile.ownerId ? players.find(p => p.id === tile.ownerId) : undefined; const occupants = players.filter(p => p.position === tile.id && !p.isBankrupt); return <div className={`property-tile ${tile.type !== 'PROPERTY' ? 'special-tile' : `property-${tile.color}`} tile-${side}`} style={side === 'top' ? { gridColumn: order, gridRow: 1 } : side === 'right' ? { gridColumn: 10, gridRow: order } : side === 'bottom' ? { gridColumn: order, gridRow: 10 } : { gridColumn: 1, gridRow: order }}><b>{tile.name}</b><span>{tile.icon}</span><small>{tile.price ? `${tile.price} MNT` : tile.type}</small>{owner && <em className="tile-owner" style={{ color: owner.color }}>{owner.avatar} {owner.name}</em>}{tile.buildingLevel > 0 && <em className="tile-buildings">{tile.buildingLevel >= 5 ? '🏨' : '🏠'.repeat(tile.buildingLevel)}</em>}{occupants.length > 0 && <i className="tile-occupants">{occupants.map(p => p.avatar).join('')}</i>}</div> }
 
-function DicePair({ rolled }: { rolled: boolean }) { return <div className="action-dice"><span className={rolled ? 'dice dice-large rolling' : 'dice dice-large'}>⚄</span><span className={rolled ? 'dice dice-large rolling delay' : 'dice dice-large'}>⚂</span></div> }
+function DicePair({ rolled, dice1, dice2 }: { rolled: boolean; dice1: number; dice2: number }) { return <div className="action-dice"><span className={rolled ? 'dice dice-large rolling' : 'dice dice-large'}>{dice1}</span><span className={rolled ? 'dice dice-large rolling delay' : 'dice dice-large'}>{dice2}</span></div> }
 
-function GameChat() { return <div className="game-chat"><div className="chat-heading"><span>ТОГЛООМЫН ЯВЦ</span><MoreHorizontal size={15} /></div><p><b className="chat-orange">Zaya</b> шоронд орлоо.</p><p><b className="chat-gold">Bold</b> Налайхыг худалдаж авлаа.</p><p><b className="chat-cyan">Sarnai</b> 2 шоо шидлээ.</p></div> }
+function GameChat({ log }: { log: string[] }) { return <div className="game-chat"><div className="chat-heading"><span>ТОГЛООМЫН ЯВЦ</span><MoreHorizontal size={15} /></div>{log.map((item, i) => <p key={`${item}-${i}`}>{item}</p>)}</div> }
+
+function GameModal({ modal, dispatch }: { modal: NonNullable<GameState['modal']>; dispatch: React.Dispatch<GameAction> }) { return <div className="game-modal-overlay"><div className="game-result-modal"><Sparkles size={24} className="modal-spark" /><h2>{modal.title}</h2><p>{modal.body}</p><button className="auth-start" onClick={() => dispatch({ type: 'CLOSE_MODAL' })}>ҮРГЭЛЖЛҮҮЛЭХ</button></div></div> }
 
 function ProfileScreen({ go, avatar, nickname, setNickname, selectedAvatar, setSelectedAvatar }: { go: (s: Screen) => void; avatar: Avatar; nickname: string; setNickname: (v: string) => void; selectedAvatar: Avatar; setSelectedAvatar: (v: Avatar) => void }) {
   return <section className="profile-screen"><div className="room-heading"><div><button className="back-button" onClick={() => go('home')}><ArrowLeft size={17} /> Буцах</button><h1>Миний <span className="gold">profile</span></h1><p>Өөрийн тоглоомын дүр төрхийг тохируулна уу.</p></div></div><div className="profile-layout"><div className="profile-hero"><div className="large-avatar"><AvatarBubble avatar={avatar} size="xl" crown /></div><h2>{nickname}</h2><span className="level-pill"><Crown size={14} /> LEVEL 38</span><div className="level-progress"><span /><small>1,840 / 2,500 XP</small></div><div className="stat-grid"><Stat value="450" label="Нийт тоглолт" /><Stat value="68%" label="Win rate" /><Stat value="112" label="Spy roles" /><Stat value="86" label="Location master" /></div></div><div className="profile-tools"><div className="tool-card"><div className="side-title"><b>Дүрээ тохируулах</b><Settings size={17} /></div><label>Нэр</label><input value={nickname} onChange={e => setNickname(e.target.value)} /><label>Амьтны avatar</label><div className="avatar-picker">{avatars.map(a => <button className={selectedAvatar.name === a.name ? 'chosen' : ''} onClick={() => setSelectedAvatar(a)} key={a.name}><AvatarBubble avatar={a} size="md" /></button>)}</div></div><div className="mini-tools"><div><Trophy size={18} /><b>Achievements</b><small>24 unlocked</small></div><div><Users size={18} /><b>Teammates</b><small>18 recent friends</small></div><div><Gamepad2 size={18} /><b>Game history</b><small>View all matches</small></div></div></div></div></section>
