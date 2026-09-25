@@ -43,7 +43,11 @@ function App() {
 
   return <div className="app-shell">
     <div className="ambient ambient-one" /><div className="ambient ambient-two" />
-    <header className="topbar">
+    {screen === 'home' ? <header className="lobby-topbar">
+      <button className="exit-pill" onClick={() => notify('Өрөөнөөс гарах үйлдэл удахгүй')}><ArrowLeft size={16} /> Гарах</button>
+      <div className="room-code"><small>ӨРӨӨНИЙ КОД</small><strong>254 852</strong></div>
+      <div className="lobby-tools"><div className="room-code compact"><small>ӨРӨӨНИЙ КОД</small><strong>254 852</strong></div><button className="waiting-pill" onClick={() => notify('Хүлээлгийн өрөө')}><span>◷</span> Хүлээлгийн өрөө</button></div>
+    </header> : <header className="topbar">
       <button className="brand" onClick={() => go('home')}><span className="brand-mark"><Mic2 size={19} /></span><span>VOICE<span className="gold">GAME</span></span></button>
       <div className="room-pill"><span className="live-dot" /> ROOM <strong>254852</strong><button onClick={() => navigator.clipboard?.writeText('254852')}><CopyIcon /></button></div>
       <div className="top-actions">
@@ -51,7 +55,7 @@ function App() {
         <button className="coin-pill" onClick={() => go('shop')}><Coins size={16} /> {coins.toLocaleString()} <Plus size={14} /></button>
         <button className="profile-mini" onClick={() => setShowProfile(true)}><AvatarBubble avatar={selectedAvatar} size="sm" crown /><span><b>{nickname}</b><small>Level 38</small></span><ChevronRight size={16} /></button>
       </div>
-    </header>
+    </header>}
 
     {showProfile && <ProfilePopover avatar={selectedAvatar} nickname={nickname} onClose={() => setShowProfile(false)} onProfile={() => go('profile')} />}
 
@@ -74,17 +78,28 @@ function App() {
 }
 
 function HomeScreen({ go, selectedAvatar, nickname, notify }: { go: (s: Screen) => void; selectedAvatar: Avatar; nickname: string; notify: (s: string) => void }) {
-  return <section className="home-screen">
-    <div className="welcome-row"><div><span className="eyebrow"><Sparkles size={13} /> PARTY PLAYGROUND</span><h1>Сайн уу, <span className="gold">{nickname}</span>!</h1><p>Найзуудтайгаа инээд хөөрөөр дүүрэн тоглоомын үдэш эхлүүлээрэй.</p></div><div className="streak-card"><Zap size={20} fill="currentColor" /><div><b>7 өдөр</b><small>идэвхтэй streak</small></div></div></div>
-    <div className="feature-grid">
-      <FeatureCard className="board-card" tag="BOARD GAME" title="Monopoly" subtitle="Сонгодог бизнесийн тулаан" icon="🎩" onClick={() => go('board')} action="Тоглох" extra={<div className="mini-board"><div className="board-center">MONO<br /><small>POLY</small></div>{['$','⌂','★','◈','✦','●'].map((x, i) => <span key={i} style={{ transform: `rotate(${i * 60}deg) translateY(-42px)` }}>{x}</span>)}</div>} />
-      <FeatureCard className="voice-card" tag="VOICE GAME  •  LIVE" title="Spyfall" subtitle="Хэн нь тагнуул вэ? Ярьж олцгооё." icon="🕵️" onClick={() => go('voice')} action="Өрөөнд орох" extra={<div className="table-preview"><div className="table-ring"><span className="table-center">МУЗЕЙ<small>SECRET LOCATION</small></span>{players.slice(0, 4).map((p, i) => <div key={p.name} className={`table-player p${i}`}><AvatarBubble avatar={p} size="sm" /></div>)}</div><div className="live-badge"><span className="live-dot" /> LIVE</div><b className="player-count"><Users size={14} /> 6/8</b></div>} />
+  return <section className="lobby-screen">
+    <div className="lobby-title"><h1>Тоглоом сонгоно уу</h1><span>Найзуудтайгаа өрөөгөө дүүргээд эхлүүлээрэй</span></div>
+    <div className="lobby-games">
+      <article className="lobby-game board-lobby">
+        <div className="game-heading">BOARD GAME</div>
+        <div className="board-art"><div className="board-square"><span>GO</span><i>🐕</i><b>MONOPOLY</b><em>⌂</em><u>★</u></div><div className="board-piece piece-one">🐘</div><div className="board-piece piece-two">🐧</div></div>
+        <button className="join-or-play" onClick={() => go('board')}>PLAY NOW</button>
+        <p>Up to 6 Players<br /><span>Monopoly Classic Rules</span></p>
+        <button className="side-join join-left" onClick={() => notify('Board Game-д нэгдлээ')}><Plus size={20} /> <small>Join</small></button>
+        <button className="side-join join-right" onClick={() => notify('Board Game-д нэгдлээ')}><Plus size={20} /> <small>Join</small></button>
+        <div className="lobby-avatar elephant">🐘</div><div className="lobby-avatar penguin">🐧</div>
+      </article>
+      <article className="lobby-game voice-lobby">
+        <div className="game-heading">VOICE GAME</div>
+        <div className="voice-art"><div className="spy-circle"><div className="spy-logo">Ш<small>SPYFALL</small></div><span className="spy-card c1">?</span><span className="spy-card c2">?</span><span className="spy-card c3">⌁</span><span className="spy-card c4">?</span></div>{players.slice(0,4).map((p,i)=><div key={p.name} className={`lobby-player lp-${i}`}><AvatarBubble avatar={p} size="md" /><b>{['Zaya','Ssmal','Sarnai','Nomin'][i]}</b>{i===2&&<small>Sarnai is speaking</small>}</div>)}<button className="voice-invite" onClick={() => notify('Voice Game invite link хууллаа')}><Plus size={19} /><small>Урих</small></button></div>
+        <button className="join-or-play" onClick={() => go('voice')}>PLAY NOW</button>
+        <p>6/8 Players Connected<br /><span>Voice Chat Social Deduction</span></p>
+      </article>
     </div>
-    <div className="quick-row"><div className="section-label">СҮҮЛИЙН ТОГЛОСОН</div><button className="text-button" onClick={() => notify('Бүх түүх удахгүй')}>Бүгдийг харах <ChevronRight size={14} /></button></div>
-    <div className="recent-row"><RecentItem icon="🕵️" title="Spyfall · Өчигдөр" meta="1-р байр • 6 тоглогч" score="+120 XP" /><RecentItem icon="🎩" title="Monopoly · 2 хоногийн өмнө" meta="Ялалт • $12,800" score="+250 XP" /><div className="invite-card" onClick={() => notify('Room code хууллаа')}><Gift size={21} /><b>Найзаа урих</b><small>Room code хуваалцах</small><ChevronRight size={16} /></div></div>
+    <div className="lobby-bottom-message">Найзуудаа урьж тоглоорой</div>
   </section>
 }
-
 function FeatureCard({ className, tag, title, subtitle, icon, extra, action, onClick }: { className: string; tag: string; title: string; subtitle: string; icon: string; extra: React.ReactNode; action: string; onClick: () => void }) {
   return <article className={`feature-card ${className}`}><div className="feature-copy"><span className="eyebrow">{tag}</span><h2>{icon} {title}</h2><p>{subtitle}</p><button className="gold-button" onClick={onClick}><Play size={15} fill="currentColor" /> {action}</button><span className="card-foot"><Users size={14} /> Up to 6 players <span>•</span> Classic rules</span></div>{extra}</article>
 }
