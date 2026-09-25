@@ -48,7 +48,7 @@ function App() {
       <button className="exit-pill" onClick={() => notify('Өрөөнөөс гарах үйлдэл удахгүй')}><ArrowLeft size={16} /> Гарах</button>
       <div className="room-code"><small>ӨРӨӨНИЙ КОД</small><strong>254 852</strong></div>
       <div className="lobby-tools"><div className="room-code compact"><small>ӨРӨӨНИЙ КОД</small><strong>254 852</strong></div><button className="waiting-pill" onClick={() => notify('Хүлээлгийн өрөө')}><span>◷</span> Хүлээлгийн өрөө</button></div>
-    </header> : screen === 'voice' ? null : <header className="topbar">
+    </header> : screen === 'voice' || screen === 'board' ? null : <header className="topbar">
       <button className="brand" onClick={() => go('home')}><span className="brand-mark"><Mic2 size={19} /></span><span>VOICE<span className="gold">GAME</span></span></button>
       <div className="room-pill"><span className="live-dot" /> ROOM <strong>254852</strong><button onClick={() => navigator.clipboard?.writeText('254852')}><CopyIcon /></button></div>
       <div className="top-actions">
@@ -123,10 +123,66 @@ function VoiceRoom({ go, micOn, setMicOn, notify }: { go: (s: Screen) => void; m
     </div>
   </section>
 }
+const mongolianTiles = [
+  { name: 'ЯВАХ', icon: '🚶', price: 'START', type: 'special' },
+  { name: 'Улаанбаатар', icon: '🏙️', price: '250 MNT', color: 'blue' },
+  { name: 'СЮРПРИЗ', icon: '❓', price: 'LUCK', type: 'special' },
+  { name: 'Дархан', icon: '🏭', price: '250 MNT', color: 'blue' },
+  { name: 'Эрдэнэт', icon: '⛏️', price: '300 MNT', color: 'blue' },
+  { name: 'ТӨМӨР ЗАМ', icon: '🚂', price: '400 MNT', type: 'special' },
+  { name: 'Чойбалсан', icon: '🌾', price: '350 MNT', color: 'green' },
+  { name: 'ЭРДЭНЭСИЙН АВДАР', icon: '🎁', price: 'LUCK', type: 'special' },
+  { name: 'Сайншанд', icon: '🏜️', price: '350 MNT', color: 'green' },
+  { name: 'ШОРОН', icon: '🚔', price: 'VISIT', type: 'special' },
+  { name: 'Даланзадгад', icon: '🐫', price: '450 MNT', color: 'orange' },
+  { name: 'Өмнөговь', icon: '🦕', price: '450 MNT', color: 'orange' },
+  { name: 'ТАТВАР', icon: '💰', price: '200 MNT', type: 'special' },
+  { name: 'Ховд', icon: '⛰️', price: '400 MNT', color: 'purple' },
+  { name: 'Өлгий', icon: '🦅', price: '400 MNT', color: 'purple' },
+  { name: '✈️ ХОВД НИСЭХ БУУДАЛ', icon: '✈️', price: '500 MNT', type: 'special' },
+  { name: 'Мөрөн', icon: '🏞️', price: '300 MNT', color: 'teal' },
+  { name: 'СҮРПРИЗ', icon: '❓', price: 'LUCK', type: 'special' },
+  { name: 'Арвайхээр', icon: '🐎', price: '300 MNT', color: 'teal' },
+  { name: 'АМРАЛТ', icon: '🏖️', price: 'REST', type: 'special' },
+  { name: 'Зуунмод', icon: '🌲', price: '350 MNT', color: 'green' },
+  { name: 'Сүхбаатар', icon: '🐴', price: '400 MNT', color: 'green' },
+  { name: 'УСНЫ КОМПАНИ', icon: '💧', price: '300 MNT', type: 'special' },
+  { name: 'Замын-Үүд', icon: '🚉', price: '450 MNT', color: 'orange' },
+  { name: '✈️ ДАЛАНЗАДГАД', icon: '✈️', price: '500 MNT', type: 'special' },
+  { name: 'Дорнод', icon: '🌄', price: '350 MNT', color: 'green' },
+  { name: 'ЭРЧИМ ХҮЧНИЙ КОМПАНИ', icon: '⚡', price: '300 MNT', type: 'special' },
+  { name: 'ЧИНГИС ХААН ОУНБ', icon: '✈️', price: '500 MNT', type: 'special' },
+  { name: 'Ховд гол', icon: '🌊', price: '300 MNT', color: 'purple' },
+  { name: 'Өлгий хот', icon: '🏔️', price: '350 MNT', color: 'purple' },
+  { name: 'ЭРДЭНЭСИЙН АВДАР', icon: '🎁', price: 'LUCK', type: 'special' },
+  { name: 'Сайншанд', icon: '🌵', price: '400 MNT', color: 'orange' },
+  { name: 'Дорнод', icon: '🐎', price: '400 MNT', color: 'green' },
+  { name: 'ТӨМӨР ЗАМ', icon: '🚂', price: '400 MNT', type: 'special' },
+  { name: 'Налайх', icon: '⛏️', price: '250 MNT', color: 'blue' },
+  { name: 'ХУДАЛДААНЫ ТӨВ', icon: '🏬', price: '300 MNT', color: 'blue' },
+]
+
+const boardPlayers = [
+  { name: 'Bold', money: '1500 MNT', coins: 5, emoji: '🐻', color: '#a77950', active: true },
+  { name: 'Sarnai', money: '1500 MNT', coins: 5, emoji: '🦊', color: '#3da8a3' },
+  { name: 'Zaya', money: '1500 MNT', coins: 5, emoji: '🐯', color: '#d8923d' },
+  { name: 'Troga', money: '1500 MNT', coins: 5, emoji: '🐼', color: '#566b89' },
+]
+
 function BoardRoom({ go }: { go: (s: Screen) => void }) {
-  const spaces = ['START', 'BEACH', 'TAX', 'PARK', 'JAIL', 'MALL', 'CHANCE', 'MUSEUM', 'GO TO JAIL', 'STATION', 'CLUB', 'PARKING'];
-  return <section className="room-screen"><div className="room-heading"><div><button className="back-button" onClick={() => go('home')}><ArrowLeft size={17} /> Буцах</button><h1>Monopoly <span className="gold">Classic</span></h1><p>Room 254852 · Round 05</p></div><button className="outline-button" onClick={() => go('home')}><X size={16} /> Гарах</button></div><div className="board-layout"><aside className="board-side left"><div className="sidebar-card"><div className="side-title"><b>Тоглогчид</b><span>4 / 6</span></div>{players.slice(0, 4).map((p, i) => <div className="player-row" key={p.name}><AvatarBubble avatar={p} size="sm" /><div><b>{p.name}</b><small>${[12800, 9500, 7200, 5600][i].toLocaleString()}</small></div><span className={`turn-dot ${i === 0 ? 'active' : ''}`} /></div>)}</div></aside><div className="monopoly-board"><div className="board-title">MONOPOLY<small>CLASSIC EDITION</small></div><div className="board-center"><Trophy size={21} /><b>Таны ээлж</b><small>Шоогоо шидээрэй!</small><button className="dice-button" onClick={() => {}}>⚄ <span>ШИДЭХ</span></button></div>{spaces.map((s, i) => <div key={s} className={`board-space space-${i}`}><small>{i + 1}</small><b>{s}</b></div>)}</div><aside className="board-side right"><div className="sidebar-card balance-card"><span>ТАНЫ МӨНГӨ</span><strong>$12,800</strong><div className="balance-line"><span style={{ width: '72%' }} /></div><small>Net worth $38,400</small></div><div className="sidebar-card"><div className="side-title"><b>Таны өмч</b><Package size={17} /></div><div className="property-chip pink"><span /> Beach Avenue <b>$1,200</b></div><div className="property-chip blue"><span /> Sky Tower <b>$2,400</b></div><div className="property-chip orange"><span /> Arcade Club <b>$1,800</b></div></div></aside></div></section>
+  const [rolled, setRolled] = useState(false)
+  return <section className="mongol-board-screen"><header className="board-game-header"><button className="exit-pill" onClick={() => go('home')}><ArrowLeft size={18} /> Гарах</button><div className="board-room-code"><small>ӨРӨӨНИЙ КОД</small><strong>254 852</strong></div><button className="waiting-pill" onClick={() => {}}>Хүлээлгийн өрөө</button></header><div className="board-game-layout"><aside className="board-player-panel"><div className="panel-kicker"><Users size={14} /> ТОГЛОГЧИД <span>4 / 6</span></div>{boardPlayers.map(p => <PlayerCard key={p.name} player={p} />)}<button className="add-player" onClick={() => {}}><Plus size={16} /> Найз урих</button></aside><GameBoard tiles={mongolianTiles} rolled={rolled} /><aside className="game-action-panel"><DicePair rolled={rolled} /><div className="turn-label"><span className="live-dot" /> BOLD-ЫН ЭЭЛЖ</div><button className="game-action gold-action" onClick={() => setRolled(true)}><span>🎲</span> ШОО ОРУУЛАХ</button><button className="game-action" onClick={() => {}}><span>🪙</span> ХУДАЛДАЖ АВАХ</button><button className="game-action" onClick={() => {}}><span>🏠</span> БАЙШИН БАРИХ</button><GameChat /></aside></div></section>
 }
+
+function PlayerCard({ player }: { player: typeof boardPlayers[number] }) { return <div className={`board-player-card ${player.active ? 'active-player' : ''}`}><AvatarBubble avatar={{ emoji: player.emoji, color: player.color }} size="md" /><div><b>{player.name}</b><small>{player.money}</small><span><Coins size={11} /> {player.coins} ӨМЧ</span></div><MoreHorizontal size={16} /></div> }
+
+function GameBoard({ tiles, rolled }: { tiles: typeof mongolianTiles; rolled: boolean }) { return <div className="game-board-shell"><div className="game-board"><div className="board-center-area"><div className="map-mark">🇲🇳</div><strong>MONGOLIA</strong><small>THE GREAT STEPPE</small><div className="board-dice-row"><span className={rolled ? 'dice rolling' : 'dice'}>⚄</span><span className={rolled ? 'dice rolling delay' : 'dice'}>⚂</span></div><div className="gold-pawn">♟<i /></div></div>{tiles.map((tile, index) => <PropertyTile tile={tile} index={index} key={`${tile.name}-${index}`} />)}</div></div> }
+
+function PropertyTile({ tile, index }: { tile: typeof mongolianTiles[number]; index: number }) { const side = index < 10 ? 'top' : index < 18 ? 'right' : index < 28 ? 'bottom' : 'left'; const order = index < 10 ? index + 1 : index < 18 ? index - 8 : index < 28 ? 38 - index : 38 - index; return <div className={`property-tile ${tile.type === 'special' ? 'special-tile' : `property-${tile.color}`} tile-${side}`} style={side === 'top' ? { gridColumn: order, gridRow: 1 } : side === 'right' ? { gridColumn: 10, gridRow: order } : side === 'bottom' ? { gridColumn: order, gridRow: 10 } : { gridColumn: 1, gridRow: order }}><b>{tile.name}</b><span>{tile.icon}</span><small>{tile.price}</small></div> }
+
+function DicePair({ rolled }: { rolled: boolean }) { return <div className="action-dice"><span className={rolled ? 'dice dice-large rolling' : 'dice dice-large'}>⚄</span><span className={rolled ? 'dice dice-large rolling delay' : 'dice dice-large'}>⚂</span></div> }
+
+function GameChat() { return <div className="game-chat"><div className="chat-heading"><span>ТОГЛООМЫН ЯВЦ</span><MoreHorizontal size={15} /></div><p><b className="chat-orange">Zaya</b> шоронд орлоо.</p><p><b className="chat-gold">Bold</b> Налайхыг худалдаж авлаа.</p><p><b className="chat-cyan">Sarnai</b> 2 шоо шидлээ.</p></div> }
 
 function ProfileScreen({ go, avatar, nickname, setNickname, selectedAvatar, setSelectedAvatar }: { go: (s: Screen) => void; avatar: Avatar; nickname: string; setNickname: (v: string) => void; selectedAvatar: Avatar; setSelectedAvatar: (v: Avatar) => void }) {
   return <section className="profile-screen"><div className="room-heading"><div><button className="back-button" onClick={() => go('home')}><ArrowLeft size={17} /> Буцах</button><h1>Миний <span className="gold">profile</span></h1><p>Өөрийн тоглоомын дүр төрхийг тохируулна уу.</p></div></div><div className="profile-layout"><div className="profile-hero"><div className="large-avatar"><AvatarBubble avatar={avatar} size="xl" crown /></div><h2>{nickname}</h2><span className="level-pill"><Crown size={14} /> LEVEL 38</span><div className="level-progress"><span /><small>1,840 / 2,500 XP</small></div><div className="stat-grid"><Stat value="450" label="Нийт тоглолт" /><Stat value="68%" label="Win rate" /><Stat value="112" label="Spy roles" /><Stat value="86" label="Location master" /></div></div><div className="profile-tools"><div className="tool-card"><div className="side-title"><b>Дүрээ тохируулах</b><Settings size={17} /></div><label>Нэр</label><input value={nickname} onChange={e => setNickname(e.target.value)} /><label>Амьтны avatar</label><div className="avatar-picker">{avatars.map(a => <button className={selectedAvatar.name === a.name ? 'chosen' : ''} onClick={() => setSelectedAvatar(a)} key={a.name}><AvatarBubble avatar={a} size="md" /></button>)}</div></div><div className="mini-tools"><div><Trophy size={18} /><b>Achievements</b><small>24 unlocked</small></div><div><Users size={18} /><b>Teammates</b><small>18 recent friends</small></div><div><Gamepad2 size={18} /><b>Game history</b><small>View all matches</small></div></div></div></div></section>
