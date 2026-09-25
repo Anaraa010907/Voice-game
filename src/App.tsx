@@ -47,7 +47,7 @@ function App() {
       <button className="exit-pill" onClick={() => notify('Өрөөнөөс гарах үйлдэл удахгүй')}><ArrowLeft size={16} /> Гарах</button>
       <div className="room-code"><small>ӨРӨӨНИЙ КОД</small><strong>254 852</strong></div>
       <div className="lobby-tools"><div className="room-code compact"><small>ӨРӨӨНИЙ КОД</small><strong>254 852</strong></div><button className="waiting-pill" onClick={() => notify('Хүлээлгийн өрөө')}><span>◷</span> Хүлээлгийн өрөө</button></div>
-    </header> : <header className="topbar">
+    </header> : screen === 'voice' ? null : <header className="topbar">
       <button className="brand" onClick={() => go('home')}><span className="brand-mark"><Mic2 size={19} /></span><span>VOICE<span className="gold">GAME</span></span></button>
       <div className="room-pill"><span className="live-dot" /> ROOM <strong>254852</strong><button onClick={() => navigator.clipboard?.writeText('254852')}><CopyIcon /></button></div>
       <div className="top-actions">
