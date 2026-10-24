@@ -4,6 +4,7 @@ import {
   RHYME_STARTERS,
   SUITS,
   fill,
+  getPenalty,
   getRules,
   type Card,
   type Category,
@@ -50,6 +51,7 @@ function bankFor(
     if (choice === "dare") return { key: "dare", list: category.dares };
     return null;
   }
+  if (rank === "Q") return { key: "truth", list: category.truths };
   if (rank === "6") return { key: "whois", list: category.whois };
   if (rank === "J") return { key: "never", list: category.never };
   if (rank === "10") return { key: "topics", list: category.topics };
@@ -57,12 +59,23 @@ function bankFor(
   return null;
 }
 
-const PROMPT_LABEL: Partial<Record<Rank, string>> = {
-  "6": "Асуулт",
-  "9": "Эхлэх үг",
-  "10": "Сэдэв",
-  J: "Өгүүлбэр",
-};
+/** Картын дундах нүдний гарчиг (Canva загварын "АСУУЛТ", "СЭДЭВ" гэх мэт) */
+function promptLabel(rank: Rank, choice: Choice | null): string {
+  if (rank === "5") return choice === "truth" ? "ҮНЭН" : "ЗОРИГ";
+  switch (rank) {
+    case "6":
+    case "Q":
+      return "АСУУЛТ";
+    case "9":
+      return "ЭХЛЭХ ҮГ";
+    case "10":
+      return "СЭДЭВ";
+    case "J":
+      return "ӨГҮҮЛБЭР";
+    default:
+      return "";
+  }
+}
 
 export function KingsCupPlay({ config, onExit, onRestart, onSettings }: Props) {
   const { category, points, names } = config;
@@ -223,9 +236,10 @@ export function KingsCupPlay({ config, onExit, onRestart, onSettings }: Props) {
     );
   }
 
-  const rule = current ? rules[current.card.rank] : null;
-  const red = current ? current.card.suit === "♥" || current.card.suit === "♦" : false;
   const rank = current?.card.rank;
+  const rule = current && rank ? rules[rank] : null;
+  const red = current ? current.card.suit === "♥" || current.card.suit === "♦" : false;
+  const label = rank ? promptLabel(rank, current?.choice ?? null) : "";
 
   return (
     <div className="app">
@@ -235,99 +249,103 @@ export function KingsCupPlay({ config, onExit, onRestart, onSettings }: Props) {
         <span>Үлдсэн карт: {deck.length}</span>
         <span>👑 K: {kings}/4</span>
       </div>
-      {turnName && !current && (
-        <div className="phase-banner day">
-          <div className="muted">Ээлж</div>
-          <h2>{turnName}</h2>
+
+      {turnName && (
+        <div className="kc-turn">
+          Ээлж: <b>{turnName}</b>
         </div>
       )}
 
-      <div className={`playing-card ${current ? (red ? "red" : "") : "back"}`}>
-        {current ? (
-          <>
-            <div className="corner">
-              {current.card.rank}
-              <br />
-              {current.card.suit}
-            </div>
-            <div className="pip">{current.card.suit}</div>
-          </>
-        ) : (
-          <div className="pip">👑</div>
-        )}
-      </div>
-
       {!current || !rule || !rank ? (
-        <button onClick={draw}>Карт татах</button>
-      ) : (
-        <div className="card stack">
-          <div className="row between">
-            <h3>{rule.name}</h3>
-            {current.drawer && <span className="badge">{current.drawer}</span>}
+        <>
+          <div className="kc-card back">
+            <div className="kc-back-crown">👑</div>
+            <div className="kc-back-title">KINGS CUP</div>
+            <div className="kc-back-sub">Ring of Fire</div>
           </div>
-          <div className="rule-text">{fill(rule.text, mode)}</div>
-
-          {rank === "5" && !current.choice && (
-            <div className="row">
-              <button className="grow" onClick={() => choose("truth")}>
-                Үнэн
-              </button>
-              <button className="grow" onClick={() => choose("dare")}>
-                Зориг
-              </button>
+          <button onClick={draw}>Карт татах</button>
+        </>
+      ) : (
+        <>
+          <div className={`kc-card ${red ? "red" : ""}`}>
+            <div className="kc-watermark">👑</div>
+            <div className="kc-corner">
+              <span className="kc-rank">{current.card.rank}</span>
+              <span className="kc-suit">{current.card.suit}</span>
             </div>
-          )}
+            <div className="kc-corner br">
+              <span className="kc-rank">{current.card.rank}</span>
+              <span className="kc-suit">{current.card.suit}</span>
+            </div>
 
-          {current.prompt && (
-            <div className="prompt-box">
-              <div className="muted">
-                {rank === "5" ? (current.choice === "truth" ? "Үнэн" : "Зориг") : PROMPT_LABEL[rank]}
+            <h3 className="kc-title">{rule.name}</h3>
+            <div className="kc-rule">{fill(rule.text, mode)}</div>
+
+            {rank === "5" && !current.choice && (
+              <div className="kc-actions">
+                <button onClick={() => choose("truth")}>Үнэн</button>
+                <button onClick={() => choose("dare")}>Зориг</button>
               </div>
-              <div className="prompt-text">{fill(current.prompt, mode)}</div>
-            </div>
-          )}
+            )}
 
-          {(rank === "2" || rank === "8") && names.length > 1 && (
-            <div className="stack">
-              <button className="small secondary" onClick={randomPerson}>
-                🎲 Санамсаргүй хүн сонгох
-              </button>
-              {current.pick && (
-                <div className="prompt-box">
-                  <div className="prompt-text">{current.pick}</div>
+            {current.prompt && (
+              <div className="kc-box">
+                <span className="kc-box-label">{label}</span>
+                <div className={rank === "9" || rank === "10" ? "kc-box-big" : "kc-box-text"}>
+                  {fill(current.prompt, mode)}
                 </div>
-              )}
-            </div>
-          )}
+              </div>
+            )}
 
-          {rank === "K" && current.kingNo > 0 && (
-            <div className="prompt-box">
-              {current.kingNo < 4 ? (
-                <div className="prompt-text">
-                  {points ? "Шийтгэлийн санд" : "Аяганд"} {current.kingNo} хувь боллоо.
-                </div>
-              ) : (
-                <div className="prompt-text">
-                  {current.drawer ?? "Карт татсан хүн"}{" "}
-                  {points ? "савны бүх оноог авлаа" : "аягыг бүгдийг ууна"}. Тоглоом дууслаа!
-                </div>
-              )}
-            </div>
-          )}
+            {(rank === "2" || rank === "8") && current.pick && (
+              <div className="kc-box">
+                <span className="kc-box-label">ХҮН</span>
+                <div className="kc-box-big">{current.pick}</div>
+              </div>
+            )}
 
-          <div className="muted">Хүсэхгүй бол алгасч болно: өөр асуулт авах эсвэл дараагийн ээлж рүү шилж.</div>
+            {rank === "K" && current.kingNo > 0 && (
+              <div className="kc-box">
+                <span className="kc-box-label">{points ? "САВ" : "АЯГА"}</span>
+                <div className="kc-dots">
+                  {[1, 2, 3, 4].map((n) => (
+                    <span key={n} className={n <= current.kingNo ? "on" : ""}>
+                      👑
+                    </span>
+                  ))}
+                </div>
+                <div className="kc-box-text">
+                  {current.kingNo < 4
+                    ? `${points ? "Шийтгэлийн санд" : "Аяганд"} ${current.kingNo} хувь боллоо.`
+                    : `${current.drawer ?? "Карт татсан хүн"} ${
+                        points ? "савны бүх оноог авлаа" : "аягыг бүгдийг ууна"
+                      }. Тоглоом дууслаа!`}
+                </div>
+              </div>
+            )}
+
+            <div className="kc-penalty">
+              <b>ШИЙТГЭЛ:</b> {getPenalty(rank, mode)}
+            </div>
+          </div>
 
           <div className="row">
+            {(rank === "2" || rank === "8") && names.length > 1 && (
+              <button className="secondary grow" onClick={randomPerson}>
+                🎲 Санамсаргүй хүн
+              </button>
+            )}
             {current.prompt && (
               <button className="secondary grow" onClick={reroll}>
                 🔄 Өөр асуулт
               </button>
             )}
-            <button className="grow" onClick={next}>
-              {rank === "K" && current.kingNo === 4 ? "Дуусгах" : "Дараагийн ээлж →"}
-            </button>
           </div>
-        </div>
+          <button onClick={next}>
+            {rank === "K" && current.kingNo === 4 ? "Дуусгах" : "Дараагийн ээлж →"}
+          </button>
+          <div className="muted">Хүсэхгүй бол өөр асуулт авч эсвэл дараагийн ээлж рүү шилжиж болно.</div>
+        </>
       )}
 
       {Scores}

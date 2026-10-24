@@ -295,3 +295,31 @@ export function getRules(points: boolean): Record<Rank, Rule> {
     },
   };
 }
+
+/** Картын доод хэсэгт гарах "ШИЙТГЭЛ" мөр (Canva загвартай ижил) */
+export function getPenalty(rank: Rank, mode: RuleMode): string {
+  const scored = mode.points || mode.simple;
+  const unit = mode.simple ? "1 шийтгэлийн оноо" : mode.points ? "1 оноо" : "1 балгам";
+  const who: Record<Rank, string> = {
+    A: "бүгд",
+    "2": "заагдсан хүн",
+    "3": "карт татсан хүн",
+    "4": "хамгийн сүүлд хүрсэн хүн",
+    "5": "биелүүлэхгүй бол",
+    "6": "хамгийн олон заалттай хүн",
+    "7": "хамгийн сүүлд гараа өргөсөн хүн",
+    "8": "",
+    "9": "алдсан эсвэл давтсан хүн",
+    "10": "алдсан эсвэл давтсан хүн",
+    J: "хийж үзсэн хүн бүр",
+    Q: "хариулсан хүн",
+    K: "",
+  };
+  if (rank === "8") {
+    return scored ? "чи оноо авах бүрт хань чинь бас авна" : "чи уух бүрт хань чинь бас уна";
+  }
+  if (rank === "K") {
+    return scored ? "4 дэх K → савны оноог авна" : "4 дэх K → аягыг бүгдийг ууна";
+  }
+  return `${who[rank]} ${unit}`;
+}
