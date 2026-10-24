@@ -26,6 +26,8 @@ export interface RoomRow {
   phase_ends_at: string | null;
   winner: string | null;
   log: LogEntry[];
+  /** Тоглоом бүрийн нийтэд ил төлөв (жишээ нь "Хэн вэ?"-ийн асуулт, үр дүн) */
+  state: Record<string, unknown>;
   created_at: string;
 }
 

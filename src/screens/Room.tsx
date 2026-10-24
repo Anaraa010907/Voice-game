@@ -6,6 +6,7 @@ import { gameById, type GameCtx } from "../games/registry";
 import { PlayerGrid } from "../components/PlayerGrid";
 import { MafiaGame } from "../games/mafia/MafiaGame";
 import { ImposterGame } from "../games/imposter/ImposterGame";
+import { WhoIsItGame } from "../games/whoisit/WhoIsItGame";
 
 interface Props {
   roomId: string;
@@ -125,6 +126,8 @@ export function Room({ roomId, userId, onLeave }: Props) {
           )}
           {error && <div className="error">{error}</div>}
         </div>
+      ) : room.game_type === "whoisit" ? (
+        <WhoIsItGame ctx={ctx} speaking={voice.speaking} isHost={isHost} />
       ) : room.game_type === "imposter" ? (
         <ImposterGame
           ctx={ctx}

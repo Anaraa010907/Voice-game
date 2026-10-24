@@ -7,7 +7,8 @@ React + Vite + TypeScript, Supabase (өгөгдөл + realtime), LiveKit (voice)
 | --- | --- |
 | Мафи (Мафи / Эмч / Мөрдөгч / Иргэн) | ✅ эхний хувилбар |
 | Who's the Imposter? | ✅ эхний хувилбар |
-| Хэн вэ?, Кодын нэр, Truth or Dare, Хоёр үнэн нэг худал, Дүр таах, Хориотой үг | ⏳ удахгүй |
+| Хэн вэ? | ✅ эхний хувилбар |
+| Кодын нэр, Truth or Dare, Хоёр үнэн нэг худал, Дүр таах, Хориотой үг | ⏳ удахгүй |
 
 ## Тохируулах
 
@@ -15,7 +16,7 @@ React + Vite + TypeScript, Supabase (өгөгдөл + realtime), LiveKit (voice)
 2. `.env.example`-ийг `.env` болгож хуулаад Supabase URL / anon key-ээ бөглөнө.
 3. Supabase төсөл дээр:
    - **Authentication → Providers → Anonymous sign-ins**-ийг идэвхжүүлнэ.
-   - `supabase/migrations/` доторх файлуудыг дарааллаар нь (`0001_init.sql`, `0002_imposter.sql`, `0003_game_types.sql`) ажиллуулна (SQL editor эсвэл `supabase db push`).
+   - `supabase/migrations/` доторх файлуудыг дарааллаар нь (`0001_init.sql`, `0002_imposter.sql`, `0003_game_types.sql`, `0004_whoisit.sql`) ажиллуулна (SQL editor эсвэл `supabase db push`).
    - Edge function байршуулна: `supabase functions deploy livekit-token`
    - Secrets: `supabase secrets set LIVEKIT_URL=wss://... LIVEKIT_API_KEY=... LIVEKIT_API_SECRET=...`
 4. `npm run dev`
@@ -27,6 +28,13 @@ React + Vite + TypeScript, Supabase (өгөгдөл + realtime), LiveKit (voice)
 - `src/games/registry.ts` — тоглоомуудын жагсаалт + voice дүрэм (хэн хэнийг сонсох).
 - `src/games/mafia/`, `src/games/imposter/` — тоглоом бүрийн UI.
 - `supabase/migrations/0002_imposter.sql` — Imposter-ийн үгсийн сан (`imposter_words`), нууц үг (`game_secrets`), RPC-ууд.
+
+## Хэн вэ? дүрэм
+
+- 3–12 тоглогч, 8 асуулт ("Хэн хамгийн нинжин сэтгэлтэй вэ?" гэх мэт эерэг асуултууд).
+- Асуулт бүрт 30 секундэд нууцаар санал өгнө (өөрийгөө сонгохгүй). Бүгд санал өгвөл шууд үр дүн гарна.
+- Хэн хэнд санал өгсөн нь хаана ч хадгалагдаж харагддаггүй, зөвхөн нийлбэр тоо ил болно.
+- Төгсгөлд хамгийн олон асуултад ялсан хүмүүсийн шагналын самбар гарна.
 
 ## Who's the Imposter? дүрэм
 
