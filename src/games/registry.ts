@@ -119,15 +119,6 @@ export const GAMES: GameDef[] = [
     minPlayers: 3,
     voicePolicy: openVoice,
   },
-  {
-    id: "bluff",
-    name: "Худал үнэн",
-    icon: "🃏",
-    blurb: "Хачирхалтай асуултад хуурамч хариулт зохиож, үнэнийг нь ол.",
-    available: false,
-    minPlayers: 3,
-    voicePolicy: openVoice,
-  },
 ];
 
 export const gameById = (id: GameType) => GAMES.find((g) => g.id === id)!;

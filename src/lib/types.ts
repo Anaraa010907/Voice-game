@@ -6,8 +6,7 @@ export type GameType =
   | "codenames"
   | "twotruths"
   | "taboo"
-  | "whoisit"
-  | "bluff";
+  | "whoisit";
 export type RoomStatus = "lobby" | "playing" | "finished";
 
 export interface LogEntry {
