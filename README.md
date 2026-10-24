@@ -10,6 +10,8 @@ React + Vite + TypeScript, Supabase (өгөгдөл + realtime), LiveKit (voice)
 | Хэн вэ? | ✅ эхний хувилбар |
 | Кодын нэр, Truth or Dare, Хоёр үнэн нэг худал, Дүр таах, Хориотой үг | ⏳ удахгүй |
 
+**Нэг утсаар тоглох (онлайн шаардахгүй):** 👑 Kings Cup (Ring of Fire) ✅
+
 ## Тохируулах
 
 1. `npm install`
@@ -28,6 +30,13 @@ React + Vite + TypeScript, Supabase (өгөгдөл + realtime), LiveKit (voice)
 - `src/games/registry.ts` — тоглоомуудын жагсаалт + voice дүрэм (хэн хэнийг сонсох).
 - `src/games/mafia/`, `src/games/imposter/` — тоглоом бүрийн UI.
 - `supabase/migrations/0002_imposter.sql` — Imposter-ийн үгсийн сан (`imposter_words`), нууц үг (`game_secrets`), RPC-ууд.
+
+## Kings Cup
+
+- Нэг утсыг дамжуулж тоглоно. Supabase, LiveKit шаардахгүй (`src/games/kingscup/`).
+- Ангилал: Энгийн (оноотой), Ууж байгаа хүмүүст, +18, Хосуудад. Энгийн биш ангилалд "Балгам" эсвэл "Оноо" горим сонгоно.
+- Ууж байгаа болон +18 ангилалд 18-аас дээш гэдгээ баталгаажуулна.
+- 13 картын дүрэм, 4 дэх K гарахад тоглоом дуусна. Асуулт, даалгаврын сан `content.ts`-д байгаа, засаж болно.
 
 ## Хэн вэ? дүрэм
 

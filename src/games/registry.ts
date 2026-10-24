@@ -123,6 +123,25 @@ export const GAMES: GameDef[] = [
 
 export const gameById = (id: GameType) => GAMES.find((g) => g.id === id)!;
 
+/** Нэг утсаар тоглодог, онлайн өрөө шаарддаггүй тоглоомууд */
+export type LocalGameId = "kingscup";
+
+export interface LocalGameDef {
+  id: LocalGameId;
+  name: string;
+  icon: string;
+  blurb: string;
+}
+
+export const LOCAL_GAMES: LocalGameDef[] = [
+  {
+    id: "kingscup",
+    name: "Kings Cup",
+    icon: "👑",
+    blurb: "Хөзөр татаж, карт бүрийн дүрмээр тоглоно. Энгийн, ууж байгаа, +18, хосуудын ангилалтай.",
+  },
+];
+
 export const ROLE_INFO: Record<string, { label: string; icon: string; desc: string }> = {
   mafia: {
     label: "Мафи",
