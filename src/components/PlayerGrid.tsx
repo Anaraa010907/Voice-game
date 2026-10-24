@@ -27,12 +27,22 @@ export function PlayerGrid({ players, speaking, sub, badge, pickable, pickedId, 
         const s = sub?.(p);
         const b = badge?.(p);
         return (
-          <div key={p.id} className={cls} onClick={() => canPick && onPick?.(p)}>
+          <div
+            key={p.id}
+            className={cls}
+            onClick={() => canPick && onPick?.(p)}
+            role={canPick ? "button" : undefined}
+            tabIndex={canPick ? 0 : undefined}
+            onKeyDown={(e) => {
+              if (canPick && (e.key === "Enter" || e.key === " ")) {
+                e.preventDefault();
+                onPick?.(p);
+              }
+            }}
+          >
             <div className="avatar">{p.avatar}</div>
-            <div className="grow" style={{ minWidth: 0 }}>
-              <div className="player-name">{p.name}</div>
-              {s && <div className="player-sub">{s}</div>}
-            </div>
+            <div className="player-name">{p.name}</div>
+            {s && <div className="player-sub">{s}</div>}
             {b && <span className="badge">{b}</span>}
           </div>
         );

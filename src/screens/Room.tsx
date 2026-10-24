@@ -88,23 +88,30 @@ export function Room({ roomId, userId, onLeave }: Props) {
       : "Voice холбогдож байна…";
 
   return (
-    <div className="app">
-      <div className="row between">
-        <div>
-          <div className="muted">
-            {game.icon} {game.name}
+    <div className="app" data-game={room.game_type}>
+      <header className="room-head">
+        <div className="room-head-top">
+          <div className="room-game">
+            <span className="glyph" aria-hidden="true">
+              {game.icon}
+            </span>
+            {game.name}
           </div>
-          <div className="room-code" onClick={copyCode} role="button">
-            {room.code}
-          </div>
-          <div className="muted">{copied ? "Хуулагдлаа ✓" : "Кодыг дарж хуулна"}</div>
+          <button className="small secondary" onClick={leave}>
+            Гарах
+          </button>
         </div>
-        <button className="small secondary" onClick={leave}>
-          Гарах
+        <button className="code-plate" onClick={copyCode} aria-label="Өрөөний кодыг хуулах">
+          <span className="room-code">{room.code}</span>
+          <span className="muted">{copied ? "Хуулагдлаа ✓" : "Дарж хуулаад найзуудаа урь"}</span>
         </button>
-      </div>
+        <div className="ornament" aria-hidden="true" />
+      </header>
 
-      <div className={voice.error ? "error" : "muted"}>🎙️ {voiceStatus}</div>
+      <div className={`voice-pill ${voice.error ? "bad" : voice.connected ? "ok" : ""}`}>
+        <span className="dot" aria-hidden="true" />
+        {voiceStatus}
+      </div>
 
       {room.status === "lobby" ? (
         <div className="card stack">
@@ -149,12 +156,14 @@ export function Room({ roomId, userId, onLeave }: Props) {
 
       <div className="mic-bar">
         <button
-          className={voice.micOn ? "" : "secondary"}
-          style={{ flex: 1 }}
+          className={`mic-btn ${voice.micOn && policy.canSpeak ? "on" : ""}`}
           disabled={!voice.connected || !policy.canSpeak}
           onClick={voice.toggleMic}
         >
-          {!policy.canSpeak ? "🔇 Одоо ярих боломжгүй" : voice.micOn ? "🎙️ Mic асаалттай" : "🎤 Mic унтраалттай"}
+          <span className="mic-ico" aria-hidden="true">
+            {!policy.canSpeak ? "🔇" : voice.micOn ? "🎙️" : "🎤"}
+          </span>
+          {!policy.canSpeak ? "Одоо ярих боломжгүй" : voice.micOn ? "Mic асаалттай" : "Mic унтраалттай"}
         </button>
       </div>
     </div>
