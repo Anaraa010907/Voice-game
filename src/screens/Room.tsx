@@ -5,6 +5,7 @@ import { useVoice } from "../lib/voice";
 import { gameById, type GameCtx } from "../games/registry";
 import { PlayerGrid } from "../components/PlayerGrid";
 import { MafiaGame } from "../games/mafia/MafiaGame";
+import { ImposterGame } from "../games/imposter/ImposterGame";
 
 interface Props {
   roomId: string;
@@ -63,7 +64,7 @@ export function Room({ roomId, userId, onLeave }: Props) {
   const start = async () => {
     setError(null);
     try {
-      await api.startGame(roomId);
+      await api.startGame(roomId, room.game_type);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
@@ -124,6 +125,14 @@ export function Room({ roomId, userId, onLeave }: Props) {
           )}
           {error && <div className="error">{error}</div>}
         </div>
+      ) : room.game_type === "imposter" ? (
+        <ImposterGame
+          ctx={ctx}
+          votes={votes}
+          revealed={revealed}
+          speaking={voice.speaking}
+          isHost={isHost}
+        />
       ) : (
         <MafiaGame
           ctx={ctx}

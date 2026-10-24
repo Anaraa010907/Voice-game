@@ -1,4 +1,14 @@
-export type GameType = "mafia" | "spyfall" | "werewolf";
+export type GameType =
+  | "mafia"
+  | "imposter"
+  | "spyfall"
+  | "werewolf"
+  | "charades"
+  | "guesswho"
+  | "truthdare"
+  | "codenames"
+  | "twotruths"
+  | "taboo";
 export type RoomStatus = "lobby" | "playing" | "finished";
 
 export interface LogEntry {
@@ -52,6 +62,9 @@ export interface MyRole {
   player_id: string;
   role: string;
   teammates: { id: string; name: string }[];
+  /** Imposter тоглоом: ангилал, болон үг (imposter-д null) */
+  category?: string;
+  word?: string | null;
 }
 
 export interface PublicRoom {

@@ -19,7 +19,8 @@ export const api = {
     call<RoomRow>("join_room", { p_code: code, p_name: name, p_avatar: avatar }),
   leaveRoom: (roomId: string) => call<void>("leave_room", { p_room: roomId }),
   listPublicRooms: () => call<PublicRoom[]>("list_public_rooms"),
-  startGame: (roomId: string) => call<void>("start_game", { p_room: roomId }),
+  startGame: (roomId: string, game: GameType) =>
+    call<void>(game === "imposter" ? "start_imposter" : "start_game", { p_room: roomId }),
   myRole: (roomId: string) => call<MyRole | null>("get_my_role", { p_room: roomId }),
   revealRoles: (roomId: string) =>
     call<{ player_id: string; role: string }[]>("reveal_roles", { p_room: roomId }),
@@ -30,4 +31,12 @@ export const api = {
   advance: (roomId: string, phase: string, round: number) =>
     call<void>("advance_phase", { p_room: roomId, p_phase: phase, p_round: round }),
   playAgain: (roomId: string) => call<void>("play_again", { p_room: roomId }),
+
+  // Imposter
+  imposterVote: (roomId: string, targetId: string | null) =>
+    call<void>("cast_imposter_vote", { p_room: roomId, p_target: targetId }),
+  imposterGuess: (roomId: string, guess: string) =>
+    call<void>("submit_imposter_guess", { p_room: roomId, p_guess: guess }),
+  imposterAdvance: (roomId: string, phase: string) =>
+    call<void>("advance_imposter", { p_room: roomId, p_phase: phase }),
 };

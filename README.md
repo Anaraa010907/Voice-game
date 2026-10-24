@@ -6,8 +6,9 @@ React + Vite + TypeScript, Supabase (өгөгдөл + realtime), LiveKit (voice)
 | Тоглоом | Төлөв |
 | --- | --- |
 | Мафи (Мафи / Эмч / Мөрдөгч / Иргэн) | ✅ эхний хувилбар |
-| Spyfall | ⏳ удахгүй |
-| Werewolf | ⏳ удахгүй |
+| Who's the Imposter? | ✅ эхний хувилбар |
+| Дуугүй жүжиг, Дүр таах, Truth or Dare | ⏳ удахгүй |
+| Spyfall, Werewolf, Кодын нэр, Хоёр үнэн нэг худал, Хориотой үг | ⏳ удахгүй |
 
 ## Тохируулах
 
@@ -15,7 +16,7 @@ React + Vite + TypeScript, Supabase (өгөгдөл + realtime), LiveKit (voice)
 2. `.env.example`-ийг `.env` болгож хуулаад Supabase URL / anon key-ээ бөглөнө.
 3. Supabase төсөл дээр:
    - **Authentication → Providers → Anonymous sign-ins**-ийг идэвхжүүлнэ.
-   - `supabase/migrations/0001_init.sql`-ийг ажиллуулна (SQL editor эсвэл `supabase db push`).
+   - `supabase/migrations/` доторх файлуудыг дарааллаар нь (`0001_init.sql`, дараа нь `0002_imposter.sql`) ажиллуулна (SQL editor эсвэл `supabase db push`).
    - Edge function байршуулна: `supabase functions deploy livekit-token`
    - Secrets: `supabase secrets set LIVEKIT_URL=wss://... LIVEKIT_API_KEY=... LIVEKIT_API_SECRET=...`
 4. `npm run dev`
@@ -25,7 +26,14 @@ React + Vite + TypeScript, Supabase (өгөгдөл + realtime), LiveKit (voice)
 - `supabase/migrations/0001_init.sql` — хүснэгт, RLS, бүх тоглоомын логик (RPC). Үүрэг нууц хадгалагдана, зөвхөн өөрийн үүргийг уншиж чадна.
 - `supabase/functions/livekit-token` — өрөөний гишүүнд LiveKit token олгоно.
 - `src/games/registry.ts` — тоглоомуудын жагсаалт + voice дүрэм (хэн хэнийг сонсох).
-- `src/games/mafia/` — Мафи UI.
+- `src/games/mafia/`, `src/games/imposter/` — тоглоом бүрийн UI.
+- `supabase/migrations/0002_imposter.sql` — Imposter-ийн үгсийн сан (`imposter_words`), нууц үг (`game_secrets`), RPC-ууд.
+
+## Who's the Imposter? дүрэм
+
+- 3–12 тоглогч. Нэг хүн imposter болно; бусад нь нэг үгийг (жишээ нь "бууз") авна, imposter зөвхөн ангиллыг ("Хоол") мэднэ.
+- Үе: үг харах (20с) → хэлэлцүүлэг (150с) → санал хураалт (45с) → imposter баригдвал үг таах (30с).
+- Imposter баригдаж, үгийг зөв таавал ялна. Буруу хүн хөөгдвөл эсвэл санал тэнцвэл imposter ялна.
 
 ## Мафи дүрэм
 
