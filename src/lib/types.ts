@@ -1,14 +1,13 @@
 export type GameType =
   | "mafia"
   | "imposter"
-  | "spyfall"
-  | "werewolf"
-  | "charades"
   | "guesswho"
   | "truthdare"
   | "codenames"
   | "twotruths"
-  | "taboo";
+  | "taboo"
+  | "whoisit"
+  | "bluff";
 export type RoomStatus = "lobby" | "playing" | "finished";
 
 export interface LogEntry {

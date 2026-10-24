@@ -7,8 +7,8 @@ React + Vite + TypeScript, Supabase (өгөгдөл + realtime), LiveKit (voice)
 | --- | --- |
 | Мафи (Мафи / Эмч / Мөрдөгч / Иргэн) | ✅ эхний хувилбар |
 | Who's the Imposter? | ✅ эхний хувилбар |
-| Дуугүй жүжиг, Дүр таах, Truth or Dare | ⏳ удахгүй |
-| Spyfall, Werewolf, Кодын нэр, Хоёр үнэн нэг худал, Хориотой үг | ⏳ удахгүй |
+| Хэн вэ?, Худал үнэн | ⏳ удахгүй |
+| Кодын нэр, Truth or Dare, Хоёр үнэн нэг худал, Дүр таах, Хориотой үг | ⏳ удахгүй |
 
 ## Тохируулах
 
@@ -16,7 +16,7 @@ React + Vite + TypeScript, Supabase (өгөгдөл + realtime), LiveKit (voice)
 2. `.env.example`-ийг `.env` болгож хуулаад Supabase URL / anon key-ээ бөглөнө.
 3. Supabase төсөл дээр:
    - **Authentication → Providers → Anonymous sign-ins**-ийг идэвхжүүлнэ.
-   - `supabase/migrations/` доторх файлуудыг дарааллаар нь (`0001_init.sql`, дараа нь `0002_imposter.sql`) ажиллуулна (SQL editor эсвэл `supabase db push`).
+   - `supabase/migrations/` доторх файлуудыг дарааллаар нь (`0001_init.sql`, `0002_imposter.sql`, `0003_game_types.sql`) ажиллуулна (SQL editor эсвэл `supabase db push`).
    - Edge function байршуулна: `supabase functions deploy livekit-token`
    - Secrets: `supabase secrets set LIVEKIT_URL=wss://... LIVEKIT_API_KEY=... LIVEKIT_API_SECRET=...`
 4. `npm run dev`
