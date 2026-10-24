@@ -1,15 +1,5 @@
 import { useRef, useState } from "react";
-import {
-  RANKS,
-  RHYME_STARTERS,
-  SUITS,
-  fill,
-  getPenalty,
-  getRules,
-  type Card,
-  type Category,
-  type Rank,
-} from "./content";
+import { PUNISHMENTS, cardsFor, kindById, shuffle, type CardDef } from "./cards";
 import type { KingsCupConfig } from "./KingsCupSetup";
 
 interface Props {
@@ -19,129 +9,45 @@ interface Props {
   onSettings: () => void;
 }
 
-type Choice = "truth" | "dare";
-
 interface Drawn {
-  card: Card;
+  card: CardDef;
   drawer: string | null;
-  prompt: string | null;
-  choice: Choice | null;
+  /** Үнэн эсвэл зориг: сонгосон хувилбарын индекс */
+  choice: number | null;
+  /** "Санамсаргүй хүн" товчоор сонгогдсон нэр */
   pick: string | null;
-  /** K карт бол хэд дэх K вэ (1–4), бусад үед 0 */
-  kingNo: number;
-}
-
-function buildDeck(): Card[] {
-  const deck: Card[] = [];
-  for (const suit of SUITS) for (const rank of RANKS) deck.push({ rank, suit });
-  for (let i = deck.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [deck[i], deck[j]] = [deck[j], deck[i]];
-  }
-  return deck;
-}
-
-function bankFor(
-  rank: Rank,
-  choice: Choice | null,
-  category: Category,
-): { key: string; list: string[] } | null {
-  if (rank === "5") {
-    if (choice === "truth") return { key: "truth", list: category.truths };
-    if (choice === "dare") return { key: "dare", list: category.dares };
-    return null;
-  }
-  if (rank === "Q") return { key: "truth", list: category.truths };
-  if (rank === "6") return { key: "whois", list: category.whois };
-  if (rank === "J") return { key: "never", list: category.never };
-  if (rank === "10") return { key: "topics", list: category.topics };
-  if (rank === "9") return { key: "rhyme", list: RHYME_STARTERS };
-  return null;
-}
-
-/** Картын дундах нүдний гарчиг (Canva загварын "АСУУЛТ", "СЭДЭВ" гэх мэт) */
-function promptLabel(rank: Rank, choice: Choice | null): string {
-  if (rank === "5") return choice === "truth" ? "ҮНЭН" : "ЗОРИГ";
-  switch (rank) {
-    case "6":
-    case "Q":
-      return "АСУУЛТ";
-    case "9":
-      return "ЭХЛЭХ ҮГ";
-    case "10":
-      return "СЭДЭВ";
-    case "J":
-      return "ӨГҮҮЛБЭР";
-    default:
-      return "";
-  }
+  punishment: string | null;
 }
 
 export function KingsCupPlay({ config, onExit, onRestart, onSettings }: Props) {
-  const { category, points, names } = config;
-  const mode = { points, simple: category.pointsOnly };
-  const rules = getRules(points);
+  const { category, names } = config;
 
-  const [deck, setDeck] = useState<Card[]>(() => buildDeck());
+  const [deck, setDeck] = useState<CardDef[]>(() => shuffle(cardsFor(category?.id ?? null)));
+  const [total] = useState(deck.length);
   const [current, setCurrent] = useState<Drawn | null>(null);
   const [turn, setTurn] = useState(0);
-  const [kings, setKings] = useState(0);
-  const [scores, setScores] = useState<number[]>(() => names.map(() => 0));
+  const [drawnCount, setDrawnCount] = useState(0);
   const [finished, setFinished] = useState(false);
-  const usedRef = useRef<Record<string, number[]>>({});
+  const usedPunish = useRef<number[]>([]);
 
-  const scoreboard = points && names.length > 0;
   const turnName = names.length > 0 ? names[turn % names.length] : null;
 
-  const pickFrom = (key: string, list: string[]): string => {
-    const used = usedRef.current[key] ?? [];
-    let pool = list.map((_, i) => i).filter((i) => !used.includes(i));
-    if (pool.length === 0) {
-      usedRef.current[key] = [];
-      pool = list.map((_, i) => i);
-    }
-    const idx = pool[Math.floor(Math.random() * pool.length)];
-    usedRef.current[key] = [...(usedRef.current[key] ?? []), idx];
-    return list[idx];
-  };
-
-  const draw = () => {
-    if (current || finished) return;
+  /** Багцын дараагийн картыг татна. Багц хоосон бол тоглоом дуусна. */
+  const dealNext = () => {
     if (deck.length === 0) {
+      setCurrent(null);
       setFinished(true);
       return;
     }
     const [card, ...rest] = deck;
     setDeck(rest);
-
-    let kingNo = 0;
-    if (card.rank === "K") {
-      kingNo = kings + 1;
-      setKings(kingNo);
-      // 4 дэх K: савны (3 хувь) оноог карт татсан хүн авна
-      if (kingNo === 4 && scoreboard) {
-        const idx = turn % names.length;
-        setScores((s) => s.map((v, i) => (i === idx ? v + 3 : v)));
-      }
-    }
-
-    const bank = bankFor(card.rank, null, category);
-    const prompt = bank ? pickFrom(bank.key, bank.list) : null;
-    setCurrent({ card, drawer: turnName, prompt, choice: null, pick: null, kingNo });
+    setDrawnCount((n) => n + 1);
+    setCurrent({ card, drawer: turnName, choice: null, pick: null, punishment: null });
   };
 
-  const choose = (choice: Choice) => {
+  const choose = (index: number) => {
     if (!current) return;
-    const bank = bankFor("5", choice, category);
-    if (!bank) return;
-    setCurrent({ ...current, choice, prompt: pickFrom(bank.key, bank.list) });
-  };
-
-  const reroll = () => {
-    if (!current) return;
-    const bank = bankFor(current.card.rank, current.choice, category);
-    if (!bank) return;
-    setCurrent({ ...current, prompt: pickFrom(bank.key, bank.list) });
+    setCurrent({ ...current, choice: index });
   };
 
   const randomPerson = () => {
@@ -151,24 +57,33 @@ export function KingsCupPlay({ config, onExit, onRestart, onSettings }: Props) {
     setCurrent({ ...current, pick: others[Math.floor(Math.random() * others.length)] });
   };
 
-  const next = () => {
+  const choosePunishment = () => {
     if (!current) return;
-    const last = current.card.rank === "K" && current.kingNo === 4;
+    let pool = PUNISHMENTS.map((_, i) => i).filter((i) => !usedPunish.current.includes(i));
+    if (pool.length === 0) {
+      usedPunish.current = [];
+      pool = PUNISHMENTS.map((_, i) => i);
+    }
+    const idx = pool[Math.floor(Math.random() * pool.length)];
+    usedPunish.current = [...usedPunish.current, idx];
+    setCurrent({ ...current, punishment: PUNISHMENTS[idx] });
+  };
+
+  /** Даалгавар дууссан: утсыг дараагийн хүнд дамжуулна */
+  const done = () => {
     setCurrent(null);
-    if (last || deck.length === 0) {
+    if (deck.length === 0) {
       setFinished(true);
       return;
     }
     setTurn((t) => t + 1);
   };
 
-  const addPoint = (i: number) => setScores((s) => s.map((v, j) => (j === i ? v + 1 : v)));
-
   const Header = (
     <div className="row between">
       <div>
         <div className="muted">
-          {category.icon} {category.name} · {points ? "Оноо" : "Балгам"}
+          {category ? `${category.icon} ${category.name}` : "🃏 Үндсэн багц"}
         </div>
         <h2>👑 Kings Cup</h2>
       </div>
@@ -178,57 +93,16 @@ export function KingsCupPlay({ config, onExit, onRestart, onSettings }: Props) {
     </div>
   );
 
-  const Scores = scoreboard ? (
-    <div className="card stack">
-      <h3>Шийтгэлийн оноо</h3>
-      {names.map((n, i) => (
-        <div key={n} className="row between">
-          <b>{n}</b>
-          <div className="row">
-            <span className="timer">{scores[i]}</span>
-            {!finished && (
-              <button className="small secondary" onClick={() => addPoint(i)}>
-                +1
-              </button>
-            )}
-          </div>
-        </div>
-      ))}
-    </div>
-  ) : null;
-
   if (finished) {
-    const ranked = names
-      .map((n, i) => ({ name: n, score: scores[i] }))
-      .sort((a, b) => b.score - a.score);
-    const top = ranked[0];
     return (
-      <div className="app">
+      <div className="app" data-game="kingscup">
         {Header}
         <div className="phase-banner day">
           <div className="big">👑</div>
-          <h2>Тоглоом дууслаа!</h2>
-          {scoreboard && top && top.score > 0 && (
-            <div className="muted">
-              Хамгийн олон оноотой: <b>{top.name}</b> ({top.score}). Хөгжилтэй даалгавар хийнэ үү!
-            </div>
-          )}
+          <h2>Багц дууслаа!</h2>
+          <div className="muted">Бүх {total} карт татагдлаа. Дахин хутгаад тоглож болно.</div>
         </div>
-        {scoreboard && (
-          <div className="card stack">
-            <h3>Эцсийн оноо</h3>
-            {ranked.map((r, i) => (
-              <div key={r.name} className="row between">
-                <b>
-                  {i === 0 && r.score > 0 ? "🏆 " : ""}
-                  {r.name}
-                </b>
-                <span className="timer">{r.score}</span>
-              </div>
-            ))}
-          </div>
-        )}
-        <button onClick={onRestart}>Дахин тоглох</button>
+        <button onClick={onRestart}>Дахин хутгаж тоглох</button>
         <button className="secondary" onClick={onSettings}>
           Тохиргоо руу
         </button>
@@ -236,119 +110,112 @@ export function KingsCupPlay({ config, onExit, onRestart, onSettings }: Props) {
     );
   }
 
-  const rank = current?.card.rank;
-  const rule = current && rank ? rules[rank] : null;
-  const red = current ? current.card.suit === "♥" || current.card.suit === "♦" : false;
-  const label = rank ? promptLabel(rank, current?.choice ?? null) : "";
+  const card = current?.card ?? null;
+  const kind = card ? kindById(card.kind) : null;
+  const chosen = card?.options && current && current.choice !== null ? card.options[current.choice] : null;
+  const mainText = chosen ? chosen.text : (card?.text ?? null);
+  const mainLabel = chosen ? chosen.label : (kind?.label ?? "");
+  const needsChoice = Boolean(card?.options) && current?.choice === null;
+  const canPickPerson = Boolean(card?.pickPerson) && names.length > 1;
 
   return (
-    <div className="app">
+    <div className="app" data-game="kingscup">
       {Header}
 
       <div className="row between muted">
-        <span>Үлдсэн карт: {deck.length}</span>
-        <span>👑 K: {kings}/4</span>
+        <span>
+          Үлдсэн карт: {deck.length}/{total}
+        </span>
+        {turnName && (
+          <span className="kc-turn">
+            Ээлж: <b>{turnName}</b>
+          </span>
+        )}
       </div>
 
-      {turnName && (
-        <div className="kc-turn">
-          Ээлж: <b>{turnName}</b>
-        </div>
-      )}
-
-      {!current || !rule || !rank ? (
-        <>
+      <div aria-live="polite" className="kc-stage">
+        {!current || !card || !kind ? (
           <div className="kc-card back">
             <div className="kc-back-crown">👑</div>
             <div className="kc-back-title">KINGS CUP</div>
-            <div className="kc-back-sub">Ring of Fire</div>
+            <div className="kc-back-sub">
+              {drawnCount === 0 ? "Карт татаж эхэл" : "Дараагийн карт хүлээж байна"}
+            </div>
           </div>
-          <button onClick={draw}>Карт татах</button>
-        </>
-      ) : (
-        <>
-          <div className={`kc-card ${red ? "red" : ""}`}>
-            <div className="kc-watermark">👑</div>
-            <div className="kc-corner">
-              <span className="kc-rank">{current.card.rank}</span>
-              <span className="kc-suit">{current.card.suit}</span>
+        ) : (
+          <div className="kc-card deal" data-kind={card.kind} key={card.id}>
+            <div className="kc-watermark" aria-hidden="true">
+              {kind.icon}
             </div>
-            <div className="kc-corner br">
-              <span className="kc-rank">{current.card.rank}</span>
-              <span className="kc-suit">{current.card.suit}</span>
+            <div className="kc-corner" aria-hidden="true">
+              {kind.icon}
             </div>
 
-            <h3 className="kc-title">{rule.name}</h3>
-            <div className="kc-rule">{fill(rule.text, mode)}</div>
+            {card.title !== kind.name && <span className="kc-kind">{kind.name}</span>}
+            <h3 className="kc-title">{card.title}</h3>
+            {kind.howTo && <div className="kc-howto">{kind.howTo}</div>}
 
-            {rank === "5" && !current.choice && (
+            {needsChoice && card.options && (
               <div className="kc-actions">
-                <button onClick={() => choose("truth")}>Үнэн</button>
-                <button onClick={() => choose("dare")}>Зориг</button>
+                {card.options.map((o, i) => (
+                  <button key={o.label} onClick={() => choose(i)}>
+                    {o.label}
+                  </button>
+                ))}
               </div>
             )}
 
-            {current.prompt && (
+            {mainText && (!card.options || chosen) && (
               <div className="kc-box">
-                <span className="kc-box-label">{label}</span>
-                <div className={rank === "9" || rank === "10" ? "kc-box-big" : "kc-box-text"}>
-                  {fill(current.prompt, mode)}
-                </div>
+                <span className="kc-box-label">{mainLabel}</span>
+                <div className={mainText.length <= 60 ? "kc-box-big" : "kc-box-text"}>{mainText}</div>
               </div>
             )}
 
-            {(rank === "2" || rank === "8") && current.pick && (
+            {current.pick && (
               <div className="kc-box">
                 <span className="kc-box-label">ХҮН</span>
                 <div className="kc-box-big">{current.pick}</div>
               </div>
             )}
 
-            {rank === "K" && current.kingNo > 0 && (
-              <div className="kc-box">
-                <span className="kc-box-label">{points ? "САВ" : "АЯГА"}</span>
-                <div className="kc-dots">
-                  {[1, 2, 3, 4].map((n) => (
-                    <span key={n} className={n <= current.kingNo ? "on" : ""}>
-                      👑
-                    </span>
-                  ))}
-                </div>
-                <div className="kc-box-text">
-                  {current.kingNo < 4
-                    ? `${points ? "Шийтгэлийн санд" : "Аяганд"} ${current.kingNo} хувь боллоо.`
-                    : `${current.drawer ?? "Карт татсан хүн"} ${
-                        points ? "савны бүх оноог авлаа" : "аягыг бүгдийг ууна"
-                      }. Тоглоом дууслаа!`}
-                </div>
+            {current.punishment && (
+              <div className="kc-box punish">
+                <span className="kc-box-label">ШИЙТГЭЛ</span>
+                <div className="kc-box-text">{current.punishment}</div>
               </div>
             )}
 
-            <div className="kc-penalty">
-              <b>ШИЙТГЭЛ:</b> {getPenalty(rank, mode)}
-            </div>
+            <div className="kc-footer">{kind.footer}</div>
           </div>
+        )}
+      </div>
 
+      {!current || !card ? (
+        <button onClick={dealNext}>{drawnCount === 0 ? "Карт татах" : "Дахин карт татах"}</button>
+      ) : (
+        <>
+          <button disabled={needsChoice} onClick={done}>
+            Дууслаа ✓
+          </button>
+          <button className="secondary" onClick={choosePunishment}>
+            🎲 {current.punishment ? "Өөр шийтгэл" : "Шийтгэл сонгох"}
+          </button>
           <div className="row">
-            {(rank === "2" || rank === "8") && names.length > 1 && (
+            <button className="secondary grow" onClick={dealNext}>
+              ⏭ Алгасах
+            </button>
+            {canPickPerson && (
               <button className="secondary grow" onClick={randomPerson}>
-                🎲 Санамсаргүй хүн
-              </button>
-            )}
-            {current.prompt && (
-              <button className="secondary grow" onClick={reroll}>
-                🔄 Өөр асуулт
+                🎯 Хүн сонгох
               </button>
             )}
           </div>
-          <button onClick={next}>
-            {rank === "K" && current.kingNo === 4 ? "Дуусгах" : "Дараагийн ээлж →"}
-          </button>
-          <div className="muted">Хүсэхгүй бол өөр асуулт авч эсвэл дараагийн ээлж рүү шилжиж болно.</div>
+          <div className="muted">
+            Уух нь сонголт. Хүсэхгүй бол шийтгэл сонгох, алгасах эсвэл ус, ундаа уух эрхтэй.
+          </div>
         </>
       )}
-
-      {Scores}
     </div>
   );
 }

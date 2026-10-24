@@ -1,10 +1,9 @@
 import { useState } from "react";
-import { CATEGORIES, type Category, type CategoryId } from "./content";
+import { KINDS, cardsFor, categoriesWithCards, type Category, type CategoryId } from "./cards";
 
 export interface KingsCupConfig {
-  category: Category;
-  /** true = оноогоор, false = балгамаар */
-  points: boolean;
+  /** null = үндсэн багц */
+  category: Category | null;
   names: string[];
 }
 
@@ -14,15 +13,15 @@ interface Props {
 }
 
 export function KingsCupSetup({ onStart, onExit }: Props) {
-  const [categoryId, setCategoryId] = useState<CategoryId>("simple");
-  const [points, setPoints] = useState(false);
+  const extraCategories = categoriesWithCards();
+  const [categoryId, setCategoryId] = useState<CategoryId | null>(null);
   const [names, setNames] = useState<string[]>([]);
   const [nameInput, setNameInput] = useState("");
   const [adultOk, setAdultOk] = useState(false);
 
-  const category = CATEGORIES.find((c) => c.id === categoryId)!;
-  const usePoints = category.pointsOnly || points;
-  const blocked = category.adultsOnly && !adultOk;
+  const category = extraCategories.find((c) => c.id === categoryId) ?? null;
+  const blocked = Boolean(category?.adultsOnly) && !adultOk;
+  const deck = cardsFor(category?.id ?? null);
 
   const addName = () => {
     const n = nameInput.trim().slice(0, 16);
@@ -32,7 +31,7 @@ export function KingsCupSetup({ onStart, onExit }: Props) {
   };
 
   return (
-    <div className="app">
+    <div className="app" data-game="kingscup">
       <div className="row between">
         <div>
           <h1>👑 Kings Cup</h1>
@@ -44,54 +43,56 @@ export function KingsCupSetup({ onStart, onExit }: Props) {
       </div>
 
       <div className="card stack">
-        <h3>Ангилал сонгох</h3>
-        {CATEGORIES.map((c) => (
-          <button
-            key={c.id}
-            className={`game-card ${c.id === categoryId ? "selected" : ""}`}
-            onClick={() => setCategoryId(c.id)}
-          >
-            <div className="game-icon">{c.icon}</div>
-            <div className="grow">
-              <b>{c.name}</b>
-              <div className="muted">{c.blurb}</div>
-            </div>
-          </button>
-        ))}
+        <h3>Багц: {deck.length} карт</h3>
+        <div className="kc-kinds">
+          {KINDS.map((k) => {
+            const n = deck.filter((c) => c.kind === k.id).length;
+            if (n === 0) return null;
+            return (
+              <div key={k.id} className="kc-kind-row">
+                <span className="kc-kind-ico" aria-hidden="true">
+                  {k.icon}
+                </span>
+                <span className="grow">{k.name}</span>
+                <b>{n}</b>
+              </div>
+            );
+          })}
+        </div>
+        <div className="muted">
+          Ээлжээр карт татна. Карт дээр асуулт эсвэл даалгавар шууд гарна. Оноо, ялагч байхгүй.
+        </div>
       </div>
 
-      <div className="card stack">
-        <h3>Горим</h3>
-        {category.pointsOnly ? (
-          <div className="muted">
-            Энгийн ангилал үргэлж шийтгэлийн оноогоор тоглогдоно. Төгсгөлд хамгийн олон оноотой хүн хөгжилтэй даалгавар
-            хийнэ.
-          </div>
-        ) : (
-          <>
-            <div className="row">
-              <button className={`grow ${points ? "secondary" : ""}`} onClick={() => setPoints(false)}>
-                🍺 Балгам
-              </button>
-              <button className={`grow ${points ? "" : "secondary"}`} onClick={() => setPoints(true)}>
-                ⭐ Оноо
-              </button>
+      {extraCategories.length > 0 && (
+        <div className="card stack">
+          <h3>Ангилал</h3>
+          <button className={`game-card ${categoryId === null ? "selected" : ""}`} onClick={() => setCategoryId(null)}>
+            <div className="game-icon">🃏</div>
+            <div className="grow">
+              <b>Үндсэн</b>
+              <div className="muted">Бүх ангилалд нийтлэг картууд.</div>
             </div>
-            {!points && (
-              <div className="muted">
-                Өөрийн хэмжээгээ мэд: ус, ундаагаар солих эрх хэнд ч бий. Уусан бол машин бүү барь.
+          </button>
+          {extraCategories.map((c) => (
+            <button
+              key={c.id}
+              className={`game-card ${c.id === categoryId ? "selected" : ""}`}
+              onClick={() => setCategoryId(c.id)}
+            >
+              <div className="game-icon">{c.icon}</div>
+              <div className="grow">
+                <b>{c.name}</b>
+                <div className="muted">{c.blurb}</div>
               </div>
-            )}
-          </>
-        )}
-      </div>
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="card stack">
         <h3>Тоглогчид (заавал биш)</h3>
-        <div className="muted">
-          Нэр оруулбал ээлжийг утас хөтөлж, "хүн заа" картад санамсаргүй хүн сонгож өгнө
-          {usePoints ? ", мөн оноог тоолно." : "."}
-        </div>
+        <div className="muted">Нэр оруулбал утас ээлжийг хөтөлж, "хань" картад санамсаргүй хүн сонгож өгнө.</div>
         <div className="row">
           <input
             placeholder="Нэр"
@@ -124,7 +125,7 @@ export function KingsCupSetup({ onStart, onExit }: Props) {
         )}
       </div>
 
-      {category.adultsOnly && (
+      {category?.adultsOnly && (
         <label className="card row muted">
           <input
             type="checkbox"
@@ -136,7 +137,12 @@ export function KingsCupSetup({ onStart, onExit }: Props) {
         </label>
       )}
 
-      <button disabled={blocked} onClick={() => onStart({ category, points: usePoints, names })}>
+      <div className="muted">
+        Уух нь сонголт. Хүсэхгүй бол ус, ундаа уух, шийтгэл сонгох эсвэл алгасах эрх хэнд ч бий. Уусан бол машин бүү
+        барь.
+      </div>
+
+      <button disabled={blocked} onClick={() => onStart({ category, names })}>
         Тоглоом эхлүүлэх
       </button>
     </div>
